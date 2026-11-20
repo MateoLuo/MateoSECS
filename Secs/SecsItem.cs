@@ -18,6 +18,7 @@ namespace MateoSECS.Secs
         public virtual string GetString() => throw new InvalidOperationException("This item is not a string.");
         public virtual T GetValue<T>() where T : struct, IConvertible => throw new InvalidOperationException("This item is not a value type.");
         public virtual T[] GetValues<T>() where T : struct, IConvertible => throw new InvalidOperationException("This item is not an array of value types.");
+        public virtual ReadOnlyMemory<byte> GetBytes() => throw new InvalidOperationException($"This item is not an array of Binary types.");
         public SecsItem? TryGetItem(int index)
         {
             if (!IsList || index < 0 || index >= Count)
@@ -81,6 +82,7 @@ namespace MateoSECS.Secs
             <= 0xFFFF => 3,
             _ => 4,
         };
+
         #endregion
         #region SML
         public abstract void AppendSml(StringBuilder sb, int indentLevel);
@@ -95,7 +97,7 @@ namespace MateoSECS.Secs
         protected static void AppendIndent(StringBuilder sb, int indentLevel) => sb.Append(' ', indentLevel * 2);
 
         /// <summary>SML 中的格式关键字</summary>
-        public static string GetSmlToken(SecsFormat format) => format switch
+        public static string GetSMLToken(SecsFormat format) => format switch
         {
             SecsFormat.List => "L",
             SecsFormat.Binary => "B",

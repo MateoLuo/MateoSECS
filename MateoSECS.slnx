@@ -1,3 +1,7 @@
 <Solution>
+  <Folder Name="/Test/">
+    <Project Path="../MateoSECS.Test/MateoSECS.Test.csproj" Id="d16c1c72-3933-4baa-9cd9-1fa63d1343a7" />
+  </Folder>
+  <Project Path="../Startup/Startup.csproj" Id="7a256c99-4ced-4727-a288-24e960072363" />
   <Project Path="MateoSECS.csproj" />
 </Solution>
