@@ -5,11 +5,12 @@ namespace MateoSECS.Hsms;
 
 public readonly struct HsmsHeader : IEquatable<HsmsHeader>
 {
+    #region Properties
     public const int Size = 10;
     /// <summary>
     /// Head 0-1 2 bytes
     /// </summary>
-    public ushort SessionId { get; init; }   
+    public ushort SessionId { get; init; }
     /// <summary>控制消息使用的保留 SessionID。</summary>
     public const ushort ControlSessionId = 0xFFFF;
 
@@ -30,6 +31,7 @@ public readonly struct HsmsHeader : IEquatable<HsmsHeader>
     public bool IsPrimary => IsDataMsg && (Function & 0x01) == 1;
     public HsmsSelectStatus SelectStatus => (HsmsSelectStatus)Byte3;
     public HsmsRejectReason RejectReason => (HsmsRejectReason)Byte3;
+    #endregion
     #region Overrides
     public bool Equals(HsmsHeader other)
     =>
