@@ -5,10 +5,17 @@ using System.Diagnostics;
 
 namespace MateoSECS.Core;
 
+/// <summary>
+/// 我发一条消息出去，然后等待对方回一条消息，有T3超时功能
+/// </summary>
 public sealed class PendingRequest : IDisposable
 {
-    private readonly TaskCompletionSource<PendingRequest> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource<SecsMsg> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private PendingRequestStatus Status => (PendingRequestStatus)_status;
     private int _status;
+    private int _disposed;
+    public bool IsSettled => Status != PendingRequestStatus.Pending;
+    public bool IsTimeout => Status == PendingRequestStatus.TimedOut;
     public uint SystemBytes { get; set; }
     public SecsMsg PrimaryMsg { get; private set; }
     public TimeSpan Timeout { get; }
@@ -36,6 +43,13 @@ public sealed class PendingRequest : IDisposable
         _startTimestamp = Stopwatch.GetTimestamp();
         CreatedAt = DateTimeOffset.Now;
     }
+    /// <summary>
+    /// if return true is ok , false reply message have question
+    /// </summary>
+    /// <param name="secondary"></param>
+    /// <param name="validateStreamFuncation"></param>
+    /// <param name="mismatchReason"></param>
+    /// <returns></returns>
     internal bool TryComplete(SecsMsg secondary, bool validateStreamFuncation, out string? mismatchReason)
     {
         mismatchReason = null;
@@ -58,6 +72,9 @@ public sealed class PendingRequest : IDisposable
         {
             _tcs.TrySetResult(secondary);
         }
+
+        Settle();
+        return true;
 
     }
     private bool IsValidPair(SecsMsg secondary, out string? reason)
@@ -116,11 +133,20 @@ public sealed class PendingRequest : IDisposable
     => Interlocked.CompareExchange(ref _status, (int)status, (int)PendingRequestStatus.Pending) == (int)PendingRequestStatus.Pending;
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+        if (TrySetStatus(PendingRequestStatus.Canceled))
+        {
+            _tcs.TrySetCanceled();
+            _onSettled?.Invoke(this);
+        }
+        _timeoutRegistration.Dispose();
+        _timeoutCts.Dispose();
     }
-    public async Task<SecsMsg> WaitAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<SecsMsg> WaitAsync(CancellationToken cancellationToken = default)
+        => cancellationToken.CanBeCanceled ? _tcs.Task.WaitAsync(cancellationToken) : _tcs.Task;
+    public override string ToString()
+        => $"Pending[{PrimaryMsg}, SysBytes=0x{SystemBytes:X8}, Elapsed={Elapsed.TotalMilliseconds:F0}ms, Settled={IsSettled}]";
     private enum PendingRequestStatus
     {
         Pending,

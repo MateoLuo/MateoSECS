@@ -148,6 +148,20 @@ public sealed class HsmsConnection : IAsyncDisposable
 
         return await pending.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
+    internal async Task SendReplyAsync(SecsMsg reply, uint systemBytes, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(reply);
+        _status.EnsureSelected();
+
+        HsmsMsg frame = HsmsMsg.CreateDataMsg(SessionId, reply, systemBytes);
+        try { await _transport.SendAsync(frame, cancellationToken).ConfigureAwait(false); }
+        catch
+        {
+            _replyManager.TryFail(systemBytes,
+                new SecsCommunicationException($"[{Name}] 发送 {reply} 失败。"));
+            throw;
+        }
+    }
 
     public Task SendNoReplyAsync(SecsMsg message, CancellationToken cancellationToken = default)
         => SendAsync(message, cancellationToken);
@@ -215,11 +229,5 @@ public sealed class HsmsConnection : IAsyncDisposable
         _controlTx.Dispose();
         _replyManager.Dispose();
     }
-
     public override string ToString() => $"{Name}@{RemoteEndPoint} [{Status}]";
-
-    internal async Task SendReplyAsync(SecsMsg reply, uint systemBytes, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
 }

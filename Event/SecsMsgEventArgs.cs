@@ -6,7 +6,8 @@ namespace MateoSECS.Event;
 public sealed class SecsMsgEventArgs : System.EventArgs
 {
     private readonly HsmsConnection _connection;
-    private byte _replied;
+    private byte _replied; 
+    public bool IsReplied => Volatile.Read(ref _replied) != 0;
 
     public SecsMsg Message { get; }
     public uint SystemBytes { get; }
@@ -26,7 +27,7 @@ public sealed class SecsMsgEventArgs : System.EventArgs
             throw new InvalidOperationException($"S{Message.S}F{Message.F} (SysBytes=0x{SystemBytes:X8}) Already replied。");
         await _connection.SendReplyAsync(reply, SystemBytes, cancellationToken);
     }
-    public async Task ReplyAsnyc(SecsItem? item, CancellationToken cancellationToken = default)
+    public async Task ReplyAsync(SecsItem? item, CancellationToken cancellationToken = default)
         => await ReplyAsync(Message.CreateReply(item), cancellationToken);
     public async Task ReplyAbortAsync(CancellationToken cancellationToken = default)
         => await ReplyAsync(Message.CreateAbortReply(), cancellationToken);

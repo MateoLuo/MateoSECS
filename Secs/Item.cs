@@ -16,12 +16,12 @@
         public static SecsItem A() => SecsAscii.Empty;
 
         /// <summary>Binary。</summary>
-        //public static SecsItem B(params byte[] value) => new SecsBinary(value);
+        public static SecsItem B(params byte[] value) => new SecsBinary(value);
 
-        //public static SecsItem B(ReadOnlyMemory<byte> value) => new SecsBinary(value);
+        public static SecsItem B(ReadOnlyMemory<byte> value) => new SecsBinary(value);
 
         /// <summary>Boolean。</summary>
-        //public static SecsItem Boolean(params bool[] value) => new SecsBoolean(value);
+        public static SecsItem Boolean(params bool[] value) => new SecsBoolean(value);
 
         public static SecsItem U1(params byte[] value) => new SecsNum<byte>(SecsFormat.U1, value);
 

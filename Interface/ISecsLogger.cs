@@ -42,3 +42,45 @@ public static class SecsLoggerExtensions
     public static void Error(this ISecsLogger logger, string message, Exception? ex = null)
         => logger.Log(SecsLogLevel.Error, message, ex);
 }
+public sealed class ConsoleSecsLogger : ISecsLogger
+{
+    private static readonly object SyncRoot = new();
+
+    private readonly string _prefix;
+
+    public ConsoleSecsLogger(string prefix = "SECS", SecsLogLevel minimumLevel = SecsLogLevel.Debug)
+    {
+        _prefix = prefix;
+        MinimumLevel = minimumLevel;
+    }
+
+    public SecsLogLevel MinimumLevel { get; set; }
+
+    public bool IsEnabled(SecsLogLevel level) => level >= MinimumLevel;
+
+    public void Log(SecsLogLevel level, string message, Exception? exception = null)
+    {
+        if (!IsEnabled(level))
+            return;
+
+        lock (SyncRoot)
+        {
+            ConsoleColor original = Console.ForegroundColor;
+            Console.ForegroundColor = level switch
+            {
+                SecsLogLevel.Trace => ConsoleColor.DarkGray,
+                SecsLogLevel.Debug => ConsoleColor.Gray,
+                SecsLogLevel.Info => ConsoleColor.White,
+                SecsLogLevel.Warning => ConsoleColor.Yellow,
+                SecsLogLevel.Error => ConsoleColor.Red,
+                _ => original,
+            };
+
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} [{level,-7}] [{_prefix}] {message}");
+            if (exception is not null)
+                Console.WriteLine(exception);
+
+            Console.ForegroundColor = original;
+        }
+    }
+}
